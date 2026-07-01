@@ -1,0 +1,27 @@
+# Render Blueprint — deploys the API + built React app as one free web service.
+# The database is hosted separately on Neon (free, no 30-day expiry); set its
+# connection string as DATABASE_URL below. Secrets marked `sync: false` are
+# entered in the Render dashboard, not committed to the repo.
+services:
+  - type: web
+    name: e-students-qr
+    runtime: node
+    plan: free
+    buildCommand: npm install && npm run build
+    startCommand: npm start
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: DATABASE_URL
+        sync: false
+      - key: JWT_SECRET
+        sync: false
+      - key: QR_ENC_KEY
+        sync: false
+      - key: CARD_TOKEN_SECRET
+        sync: false
+      - key: ADMIN_EMAIL
+        sync: false
+      - key: ADMIN_PASSWORD
+        sync: false

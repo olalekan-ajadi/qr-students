@@ -1,0 +1,265 @@
+/* ============================================================
+   Oduduwa University — E-Students QR System
+   Design system: institutional navy + amber signature + teal.
+   ============================================================ */
+:root{
+  --navy:#16243F; --navy-700:#1B2A4A; --blue:#2E5C9E; --blue-600:#27518C;
+  --teal:#1F9D8E; --teal-600:#198a7c; --amber:#E9A23B;
+  --ink:#1C2A45; --grey:#566580; --muted:#7C8AA3;
+  --line:#E2E8F2; --line-soft:#EDF1F8; --bg:#EBF0F7; --card:#FFFFFF;
+  --ok:#1F9D8E; --bad:#D64550; --warn:#E9A23B;
+  --shadow-sm:0 1px 2px rgba(22,36,63,.06), 0 1px 3px rgba(22,36,63,.08);
+  --shadow-md:0 4px 12px rgba(22,36,63,.08), 0 2px 4px rgba(22,36,63,.04);
+  --shadow-lg:0 18px 48px rgba(22,36,63,.16);
+  --radius:14px; --radius-sm:9px;
+  --font:'Inter','Segoe UI',system-ui,-apple-system,sans-serif;
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{
+  margin:0;font-family:var(--font);font-size:15px;line-height:1.5;
+  color:var(--ink);
+  background:
+    radial-gradient(1200px 500px at 100% -10%, rgba(46,92,158,.07), transparent 60%),
+    radial-gradient(900px 420px at -10% 0%, rgba(31,157,142,.06), transparent 55%),
+    var(--bg);
+  background-attachment:fixed;
+  -webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility;
+}
+a{color:var(--blue);text-decoration:none;font-weight:600}
+a:hover{text-decoration:underline}
+h1,h2,h3{letter-spacing:-.01em}
+:focus-visible{outline:2px solid var(--blue);outline-offset:2px;border-radius:4px}
+
+/* ── Topbar ─────────────────────────────────────────────── */
+.topbar{
+  background:linear-gradient(180deg,#1d2f53,var(--navy));color:#fff;padding:0 24px;
+  display:flex;align-items:center;justify-content:space-between;
+  height:66px;box-shadow:0 4px 20px rgba(13,22,40,.28);
+  border-bottom:3px solid var(--amber);position:sticky;top:0;z-index:30;
+}
+.topbar-brand{display:flex;align-items:center;gap:12px}
+.topbar-logo{width:40px;height:40px;flex-shrink:0;border-radius:8px;background:#fff;padding:3px;object-fit:contain}
+.topbar-title{display:flex;flex-direction:column;line-height:1.25}
+.topbar-school{font-size:15px;font-weight:700;letter-spacing:.1px}
+.topbar-sub{font-size:11px;color:rgba(255,255,255,.6);font-weight:500;letter-spacing:.3px}
+.topbar .right{display:flex;align-items:center;gap:14px;font-size:14px}
+.topbar-user{display:flex;align-items:center;gap:8px}
+.topbar-identity{display:flex;flex-direction:column;align-items:flex-end;line-height:1.25}
+.topbar-role-label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:var(--amber)}
+.topbar-name{font-size:13px;max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#fff}
+
+/* ── Buttons ────────────────────────────────────────────── */
+.btn{
+  border:none;border-radius:var(--radius-sm);padding:10px 17px;font-size:14px;font-weight:600;
+  font-family:inherit;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:7px;
+  transition:background .15s,box-shadow .15s,transform .08s,opacity .12s;
+}
+.btn:active{transform:translateY(1px)}
+.btn:disabled{opacity:.55;cursor:not-allowed}
+.btn-primary{background:var(--blue);color:#fff;box-shadow:0 2px 8px rgba(46,92,158,.28)}
+.btn-primary:hover:not(:disabled){background:var(--blue-600);box-shadow:0 4px 14px rgba(46,92,158,.34)}
+.btn-teal{background:var(--teal);color:#fff;box-shadow:0 2px 8px rgba(31,157,142,.26)}
+.btn-teal:hover:not(:disabled){background:var(--teal-600)}
+.btn-ghost{background:rgba(255,255,255,.08);color:#fff;border:1px solid rgba(255,255,255,.4)}
+.btn-ghost:hover:not(:disabled){background:rgba(255,255,255,.16)}
+.btn-danger{background:#FBE9EA;color:var(--bad)}
+.btn-danger:hover:not(:disabled){background:#f6d7d9}
+.btn-outline{background:#fff;color:var(--navy-700);border:1px solid var(--line)}
+.btn-outline:hover:not(:disabled){background:var(--line-soft);border-color:#CBD7E8}
+.btn-sm{padding:7px 12px;font-size:13px;border-radius:8px}
+
+/* ── Layout ─────────────────────────────────────────────── */
+.wrap{max-width:1120px;margin:30px auto;padding:0 22px}
+.tabs{display:flex;gap:8px;margin-bottom:24px;flex-wrap:wrap}
+.tab{
+  padding:10px 20px;border-radius:10px;background:#fff;border:1px solid var(--line);
+  cursor:pointer;font-weight:600;font-size:14px;color:var(--grey);
+  transition:background .15s,color .15s,border-color .15s,box-shadow .15s;
+}
+.tab:hover:not(.active){background:#fff;color:var(--navy-700);border-color:#C6D4E8;box-shadow:var(--shadow-sm)}
+.tab.active{background:var(--navy-700);color:#fff;border-color:var(--navy-700);box-shadow:0 4px 14px rgba(27,42,74,.28)}
+
+/* ── Cards ──────────────────────────────────────────────── */
+.card{
+  background:var(--card);border:1px solid var(--line);border-radius:var(--radius);
+  padding:26px;box-shadow:var(--shadow-md);
+}
+.card h2{margin:0 0 18px;font-size:18px;font-weight:700;color:var(--navy-700)}
+.card h2::after{content:"";display:block;width:34px;height:3px;background:var(--amber);border-radius:2px;margin-top:7px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+
+/* ── Form fields ────────────────────────────────────────── */
+.field{display:flex;flex-direction:column;gap:6px;margin-bottom:14px}
+.field label{font-size:13px;font-weight:600;color:var(--grey)}
+.field input,.field select,textarea{
+  padding:11px 13px;border:1px solid var(--line);border-radius:var(--radius-sm);
+  font-size:14px;font-family:inherit;background:#fff;color:var(--ink);
+  transition:border-color .15s,box-shadow .15s;width:100%;
+}
+.field select{appearance:none;-webkit-appearance:none;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%23566580' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+  background-repeat:no-repeat;background-position:right 12px center;padding-right:36px;cursor:pointer}
+.field input:focus,.field select:focus,textarea:focus{
+  outline:none;border-color:var(--blue);box-shadow:0 0 0 3px rgba(46,92,158,.15);
+}
+.field input:disabled,.field select:disabled{background:#F4F7FB;color:var(--muted);cursor:not-allowed}
+.field input[type=file]{padding:8px;background:#F8FAFD;cursor:pointer}
+
+/* ── Password field with eye toggle ─────────────────────── */
+.password-field{position:relative;display:flex;align-items:center}
+.password-field input{padding-right:44px}
+.password-toggle{
+  position:absolute;right:6px;top:50%;transform:translateY(-50%);
+  background:none;border:none;cursor:pointer;color:var(--muted);
+  width:32px;height:32px;display:flex;align-items:center;justify-content:center;
+  border-radius:7px;transition:color .15s,background .15s;
+}
+.password-toggle:hover{color:var(--blue);background:var(--line-soft)}
+
+/* ── Tables ─────────────────────────────────────────────── */
+.table-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch;border-radius:10px;border:1px solid var(--line-soft)}
+table{width:100%;border-collapse:collapse;font-size:14px}
+th,td{text-align:left;padding:12px 14px;border-bottom:1px solid var(--line-soft)}
+th{background:var(--line-soft);color:var(--navy-700);font-size:11.5px;text-transform:uppercase;letter-spacing:.6px;font-weight:700}
+tbody tr{transition:background .12s}
+tbody tr:last-child td{border-bottom:none}
+tbody tr:hover td{background:#F5F9FF}
+
+/* ── Badges ─────────────────────────────────────────────── */
+.badge{display:inline-block;padding:3px 11px;border-radius:20px;font-size:12px;font-weight:700;letter-spacing:.2px}
+.badge.verified{background:#E1F4F0;color:var(--ok)}
+.badge.not_found,.badge.invalid,.badge.mismatch{background:#FBE7E8;color:var(--bad)}
+.badge.inactive{background:#FCF0DD;color:#B97714}
+
+/* ── Inline alerts (login/register) ─────────────────────── */
+.alert{padding:12px 15px;border-radius:var(--radius-sm);font-size:14px;margin-bottom:14px;font-weight:500}
+.alert.err{background:#FBE7E8;color:#A8323C;border-left:3px solid var(--bad)}
+.alert.ok{background:#E1F4F0;color:#147567;border-left:3px solid var(--ok)}
+
+/* ── Toasts ─────────────────────────────────────────────── */
+.toast-host{
+  position:fixed;top:18px;left:50%;transform:translateX(-50%);
+  z-index:1000;display:flex;flex-direction:column;gap:10px;
+  width:min(440px,calc(100vw - 28px));pointer-events:none;
+}
+.toast{
+  pointer-events:auto;display:flex;align-items:flex-start;gap:11px;
+  background:#fff;border:1px solid var(--line);border-left-width:4px;
+  border-radius:11px;padding:13px 14px;box-shadow:var(--shadow-lg);
+  animation:toast-in .26s cubic-bezier(.2,.8,.2,1);
+}
+.toast-icon{flex-shrink:0;width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;margin-top:1px}
+.toast-msg{flex:1;font-size:14px;font-weight:500;line-height:1.4;color:var(--ink);word-break:break-word}
+.toast-close{background:none;border:none;cursor:pointer;color:var(--muted);font-size:14px;line-height:1;padding:2px 4px;border-radius:5px;flex-shrink:0}
+.toast-close:hover{color:var(--ink);background:var(--line-soft)}
+.toast-success{border-left-color:var(--teal)}
+.toast-success .toast-icon{background:var(--teal)}
+.toast-error{border-left-color:var(--bad)}
+.toast-error .toast-icon{background:var(--bad)}
+.toast-info{border-left-color:var(--blue)}
+.toast-info .toast-icon{background:var(--blue)}
+@keyframes toast-in{from{opacity:0;transform:translateY(-10px) scale(.98)}to{opacity:1;transform:translateY(0) scale(1)}}
+
+/* ── Login / Register page ──────────────────────────────── */
+.login-page{
+  min-height:100vh;display:flex;align-items:center;justify-content:center;
+  background:
+    radial-gradient(900px 500px at 80% -10%, rgba(46,92,158,.5), transparent 60%),
+    radial-gradient(700px 500px at 0% 100%, rgba(31,157,142,.32), transparent 55%),
+    linear-gradient(155deg,#0E1A30 0%,var(--navy) 55%,#21406f 100%);
+  background-color:#0E1A30;padding:20px;
+}
+.login-card{
+  background:#fff;border-radius:20px;padding:38px;width:400px;max-width:100%;
+  box-shadow:0 30px 80px rgba(0,0,0,.42);border:1px solid rgba(255,255,255,.08);
+}
+.login-brand{text-align:center}
+.login-logo{width:66px;height:66px;margin-bottom:10px;object-fit:contain}
+.login-school{font-size:19px;margin:0 0 3px;color:var(--navy-700);font-weight:800;letter-spacing:-.01em}
+.login-tagline{font-size:11px;color:var(--muted);font-style:italic;margin:0;letter-spacing:.6px}
+.login-divider{height:1px;background:var(--line);margin:20px 0}
+.login-card p.sub{text-align:center;color:var(--grey);font-size:13px;margin:0 0 18px}
+
+/* ── QR box (student portal + admin) ───────────────────── */
+.qr-box{text-align:center;padding:18px}
+.qr-box img{width:240px;height:240px;border:1px solid var(--line);border-radius:14px;padding:12px;background:#fff;box-shadow:var(--shadow-md)}
+
+/* ── Misc ────────────────────────────────────────────────── */
+.muted{color:var(--muted);font-size:13px}
+.result-card{border-radius:12px;padding:20px;margin-top:16px;border:1px solid var(--line)}
+.result-card.good{background:#E1F4F0;border-color:#BFE3DC}
+.result-card.bad{background:#FBE7E8;border-color:#F3C9C6}
+.result-card h2{font-size:17px}
+.result-card h2::after{display:none}
+.kv{display:flex;justify-content:space-between;gap:12px;padding:8px 0;border-bottom:1px dashed var(--line);font-size:14px}
+.kv span{color:var(--grey)}
+.kv b{color:var(--ink);text-align:right}
+.kv:last-child{border-bottom:none}
+.scanner-region{max-width:340px;margin:0 auto;border-radius:12px;overflow:hidden}
+.scanner-wrap{display:flex;flex-direction:column;gap:0}
+textarea{min-height:84px;font-family:ui-monospace,'SF Mono',Menlo,monospace;font-size:13px;resize:vertical}
+
+/* ── Registration & Pending approvals ───────────────────── */
+.passport{width:84px;height:84px;object-fit:cover;border-radius:10px;border:1px solid var(--line);background:#fff;flex-shrink:0}
+.pending-grid{display:flex;flex-direction:column;gap:12px}
+.pending-item{
+  display:flex;gap:16px;align-items:flex-start;padding:16px;
+  border:1px solid var(--line);border-radius:12px;background:#FBFCFE;
+  transition:box-shadow .15s,transform .1s,border-color .15s;
+}
+.pending-item:hover{box-shadow:var(--shadow-md);transform:translateY(-1px);border-color:#D5E0EF}
+.qr-empty{
+  width:240px;height:240px;margin:0 auto;display:flex;align-items:center;justify-content:center;
+  border:2px dashed var(--line);border-radius:14px;color:var(--muted);font-weight:600;font-size:14px;background:#FAFCFE;
+}
+
+/* ── Admin students grid + side panel ──────────────────── */
+.students-grid{grid-template-columns:1.5fr 1fr;align-items:start}
+.side-panel{position:sticky;top:86px;max-height:calc(100vh - 104px);overflow-y:auto}
+.panel-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:18px}
+.panel-header h2{margin:0}
+.row-selected td{background:#EEF4FF !important;box-shadow:inset 3px 0 0 var(--blue)}
+
+/* ── Detail + form section headings ─────────────────────── */
+.detail-section{margin-bottom:16px}
+.detail-heading{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.7px;color:var(--amber);margin-bottom:7px}
+.form-section-label{
+  font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.7px;color:var(--amber);
+  margin:18px 0 10px;padding-bottom:6px;border-bottom:1px solid var(--line-soft);
+}
+.pending-meta{display:flex;flex-wrap:wrap;gap:6px;margin-top:4px}
+.pending-meta span{font-size:12px;color:var(--grey);background:var(--line-soft);padding:3px 9px;border-radius:12px}
+.passport-placeholder{
+  width:84px;height:84px;flex-shrink:0;border-radius:10px;background:var(--line-soft);border:1px solid var(--line);
+  display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:22px;font-weight:700;
+}
+
+/* ── Mobile ──────────────────────────────────────────────── */
+@media(max-width:680px){
+  body{font-size:14.5px}
+  .grid2{grid-template-columns:1fr;gap:14px}
+  .wrap{margin:16px auto;padding:0 13px}
+  .topbar{padding:0 14px;height:58px}
+  .topbar-school{font-size:13px}
+  .topbar-sub,.topbar-name{display:none}
+  .topbar-logo{width:32px;height:32px}
+  .tabs{gap:6px}
+  .tab{padding:8px 13px;font-size:13px}
+  .card{padding:18px}
+  .card h2{font-size:16px}
+  .pending-item{flex-direction:column}
+  .passport{width:72px;height:72px}
+  table{font-size:13px}
+  th,td{padding:9px 10px}
+  .login-page{align-items:flex-start}
+  .login-card{padding:28px 22px}
+  .login-logo{width:54px;height:54px}
+  .students-grid{grid-template-columns:1fr}
+  .side-panel{position:static;max-height:none}
+  .toast-host{top:10px}
+}
+
+@media(prefers-reduced-motion:reduce){
+  *{animation-duration:.001ms !important;transition-duration:.001ms !important}
+}
