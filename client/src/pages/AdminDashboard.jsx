@@ -14,13 +14,13 @@ function fmtDate(d) {
 }
 
 export default function AdminDashboard() {
-  const [tab, setTab] = useState("pending");
+  const [tab, setTab] = useState("students");
   return (
     <>
       <TopBar />
       <div className="wrap">
         <div className="tabs">
-          {[["pending","Pending Approvals"],["rejected","Rejected"],["students","Students"],["verify","Verify QR"],["logs","Scan Logs"]].map(([k,l]) => (
+          {[["students","Students"],["pending","Pending Approvals"],["rejected","Rejected"],["verify","Verify QR"],["logs","Scan Logs"]].map(([k,l]) => (
             <div key={k} className={"tab"+(tab===k?" active":"")} onClick={() => setTab(k)}>{l}</div>
           ))}
         </div>
