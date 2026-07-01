@@ -8,6 +8,7 @@ import AdminDashboard from "./pages/AdminDashboard.jsx";
 import StudentPortal from "./pages/StudentPortal.jsx";
 import { getSession, clearSession } from "./api.js";
 import { ToastHost } from "./toast.jsx";
+import { ConfirmHost } from "./confirm.jsx";
 
 function Protected({ role, children }) {
   const s = getSession(role);
@@ -32,6 +33,7 @@ ReactDOM.createRoot(document.getElementById("root")).render(
         </Routes>
       </BrowserRouter>
       <ToastHost />
+      <ConfirmHost />
     </>
   </React.StrictMode>
 );

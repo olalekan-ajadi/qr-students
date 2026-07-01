@@ -161,6 +161,29 @@ tbody tr:hover td{background:#F5F9FF}
 .toast-info .toast-icon{background:var(--blue)}
 @keyframes toast-in{from{opacity:0;transform:translateY(-10px) scale(.98)}to{opacity:1;transform:translateY(0) scale(1)}}
 
+/* ── Confirmation modal ─────────────────────────────────── */
+.confirm-overlay{
+  position:fixed;inset:0;z-index:1200;background:rgba(16,24,42,.55);
+  display:flex;align-items:center;justify-content:center;padding:20px;
+  animation:cfade .15s ease;
+}
+.confirm-card{
+  background:#fff;border-radius:16px;padding:26px 24px 20px;max-width:400px;width:100%;
+  box-shadow:0 30px 70px rgba(0,0,0,.35);text-align:center;
+  animation:cpop .18s cubic-bezier(.2,.8,.2,1);
+}
+.confirm-icon{width:54px;height:54px;border-radius:50%;margin:0 auto 14px;display:flex;align-items:center;justify-content:center}
+.confirm-icon.danger{background:#FBE7E8;color:var(--bad)}
+.confirm-icon.info{background:#E7EEF9;color:var(--blue)}
+.confirm-title{margin:0 0 8px;font-size:18px;font-weight:700;color:var(--navy-700)}
+.confirm-message{margin:0 0 20px;color:var(--grey);font-size:14.5px;line-height:1.55}
+.confirm-actions{display:flex;gap:10px}
+.confirm-actions .btn{flex:1}
+.btn-danger-solid{background:var(--bad);color:#fff;box-shadow:0 2px 8px rgba(214,69,80,.28)}
+.btn-danger-solid:hover:not(:disabled){background:#c23b45}
+@keyframes cfade{from{opacity:0}to{opacity:1}}
+@keyframes cpop{from{opacity:0;transform:scale(.94) translateY(8px)}to{opacity:1;transform:scale(1) translateY(0)}}
+
 /* ── Login / Register page ──────────────────────────────── */
 .login-page{
   min-height:100vh;display:flex;align-items:center;justify-content:center;

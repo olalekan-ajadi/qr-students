@@ -85,6 +85,13 @@ router.post("/register", async (req, res) => {
   if (photoError) return res.status(400).json({ error: photoError });
   try {
     const hash = await bcrypt.hash(password, 10);
+    // A registration that was previously rejected is not kept, so clear any
+    // rejected record using this email or matric before inserting. Pending and
+    // active accounts still block re-registration (handled by the unique keys).
+    await pool.query(
+      "DELETE FROM students WHERE status='rejected' AND (email=$1 OR matric_no=$2)",
+      [email, matric_no]
+    );
     await pool.query(
       `INSERT INTO students
          (matric_no, full_name, faculty, department, level, email, password_hash, photo,

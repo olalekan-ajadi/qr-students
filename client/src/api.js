@@ -49,6 +49,13 @@ async function request(path, { method = "GET", body } = {}) {
     method, headers, body: body ? JSON.stringify(body) : undefined,
   });
   const data = await res.json().catch(() => ({}));
+  // A 401 (expired/invalid token) or a role-mismatch 403 ("Access denied" from
+  // the auth middleware) means the stored session is no longer usable on this
+  // route — most often because the single browser session was overwritten by
+  // signing in as the other role in another tab. Rather than flashing a cryptic
+  // "Access denied", clear the session and send the user to a clean sign-in.
+  // Business-logic 403s (e.g. "Account is not active") keep their own message,
+  // and /auth/ routes are excluded so login errors surface normally.
   const authFailure =
     res.status === 401 ||
     (res.status === 403 && data.error === "Access denied");
@@ -84,6 +91,7 @@ export const api = {
   createStudent: (data) => request("/students/create", { method: "POST", body: data }),
   verify: (payload) => request("/students/verify", { method: "POST", body: { payload } }),
   logs: () => request("/students/logs/all"),
+  clearLogs: () => request("/students/logs/all", { method: "DELETE" }),
   // student
   myProfile: () => request("/students/me/profile"),
   updateProfile: (d) => request("/students/me/profile", { method: "PUT", body: d }),

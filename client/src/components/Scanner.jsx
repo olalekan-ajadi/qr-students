@@ -85,6 +85,7 @@ export default function Scanner({ onScan }) {
         if (useNative) { setMode("native"); await startNative(); }
         else { setMode("fallback"); await startFallback(); }
       } catch (e) {
+        // If the native path failed unexpectedly, try the library once.
         if (useNative && !stopped) {
           try {
             if (stream) { stream.getTracks().forEach(t => t.stop()); stream = null; }

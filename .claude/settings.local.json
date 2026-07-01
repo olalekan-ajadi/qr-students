@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "PowerShell(node --version)",
+      "PowerShell(npm --version)",
+      "PowerShell(New-Item -Path \"c:\\\\Users\\\\olale\\\\Desktop\\\\qr-students\\\\server\\\\package.json\" -ItemType File -Force)",
+      "PowerShell(node -e \"const PDFDocument = require\\('./server/node_modules/pdfkit'\\); const doc = new PDFDocument\\(\\); console.log\\(typeof doc.polygon\\);\" 2>&1)"
+    ]
+  }
+}

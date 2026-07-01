@@ -3,6 +3,7 @@ import TopBar from "../components/TopBar.jsx";
 import Scanner from "../components/Scanner.jsx";
 import { api } from "../api.js";
 import { toast } from "../toast.jsx";
+import { confirmDialog } from "../confirm.jsx";
 import PasswordInput from "../components/PasswordInput.jsx";
 import { processPhoto } from "../photo.js";
 import { NG_STATES, FACULTIES } from "../data.js";
@@ -23,9 +24,9 @@ export default function AdminDashboard() {
             <div key={k} className={"tab"+(tab===k?" active":"")} onClick={() => setTab(k)}>{l}</div>
           ))}
         </div>
+        {tab==="students" && <Students />}
         {tab==="pending"  && <Pending />}
         {tab==="rejected" && <Rejected />}
-        {tab==="students" && <Students />}
         {tab==="verify"   && <Verify />}
         {tab==="logs"     && <Logs />}
       </div>
@@ -50,8 +51,14 @@ function Pending() {
     try { await api.approve(id); toast.success("Student approved and QR generated."); load(); }
     catch(e) { toast.error(e.message); }
   }
-  async function reject(id) {
-    if (!confirm("Reject this registration?")) return;
+  async function reject(id, name) {
+    const ok = await confirmDialog({
+      title: "Reject this registration?",
+      message: `${name || "This registration"} will be moved to the Rejected tab. You can restore or permanently delete it later.`,
+      confirmLabel: "Reject",
+      danger: true,
+    });
+    if (!ok) return;
     try { await api.reject(id); toast.success("Registration rejected."); load(); }
     catch(e) { toast.error(e.message); }
   }
@@ -88,7 +95,7 @@ function Pending() {
               </div>
               <div style={{marginTop:10, display:"flex", gap:8}}>
                 <button className="btn btn-teal btn-sm" onClick={() => approve(s.student_id)}>Approve</button>
-                <button className="btn btn-danger btn-sm" onClick={() => reject(s.student_id)}>Reject</button>
+                <button className="btn btn-danger btn-sm" onClick={() => reject(s.student_id, s.full_name)}>Reject</button>
               </div>
             </div>
           </div>
@@ -97,6 +104,7 @@ function Pending() {
     </div>
   );
 }
+
 // ── Rejected Registrations ────────────────────────────────
 function Rejected() {
   const [list, setList]       = useState([]);
@@ -114,8 +122,14 @@ function Rejected() {
     try { await api.restoreStudent(id); toast.success("Moved back to pending approvals."); load(); }
     catch(e) { toast.error(e.message); }
   }
-  async function remove(id) {
-    if (!confirm("Permanently delete this rejected registration? This cannot be undone.")) return;
+  async function remove(id, name) {
+    const ok = await confirmDialog({
+      title: "Delete permanently?",
+      message: `This permanently removes the rejected registration for ${name || "this applicant"}. This cannot be undone.`,
+      confirmLabel: "Delete",
+      danger: true,
+    });
+    if (!ok) return;
     try { await api.deleteStudent(id); toast.success("Registration permanently deleted."); load(); }
     catch(e) { toast.error(e.message); }
   }
@@ -153,7 +167,7 @@ function Rejected() {
               </div>
               <div style={{marginTop:10, display:"flex", gap:8}}>
                 <button className="btn btn-outline btn-sm" onClick={() => restore(s.student_id)}>Restore to pending</button>
-                <button className="btn btn-danger btn-sm" onClick={() => remove(s.student_id)}>Delete</button>
+                <button className="btn btn-danger btn-sm" onClick={() => remove(s.student_id, s.full_name)}>Delete</button>
               </div>
             </div>
           </div>
@@ -162,6 +176,7 @@ function Rejected() {
     </div>
   );
 }
+
 // ── Students ──────────────────────────────────────────────
 function Students() {
   const [list, setList]       = useState([]);
@@ -207,8 +222,14 @@ function Students() {
     closePanel();
     toast.success("Student created and activated.");
   }
-  async function del(id) {
-    if (!confirm("Permanently delete this student?")) return;
+  async function del(id, name) {
+    const ok = await confirmDialog({
+      title: "Delete this student?",
+      message: `This permanently removes ${name || "this student"} and all their records, including their QR access. This cannot be undone.`,
+      confirmLabel: "Delete",
+      danger: true,
+    });
+    if (!ok) return;
     try { await api.deleteStudent(id); toast.success("Student deleted."); closePanel(); load(); }
     catch(e) { toast.error(e.message); }
   }
@@ -249,7 +270,7 @@ function Students() {
                   <td style={{whiteSpace:"nowrap"}}>
                     <button className="btn btn-outline btn-sm" onClick={() => openDetail(s)}>View</button>{" "}
                     <button className="btn btn-outline btn-sm" onClick={() => openEdit(s)}>Edit</button>{" "}
-                    <button className="btn btn-danger btn-sm" onClick={() => del(s.student_id)}>Del</button>
+                    <button className="btn btn-danger btn-sm" onClick={() => del(s.student_id, s.full_name)}>Del</button>
                   </td>
                 </tr>
               ))}
@@ -265,7 +286,7 @@ function Students() {
             <StudentDetail
               student={panel.student}
               onEdit={() => openEdit(panel.student)}
-              onDelete={() => del(panel.student.student_id)}
+              onDelete={() => del(panel.student.student_id, panel.student.full_name)}
               onClose={closePanel}
             />
           )}
@@ -693,12 +714,37 @@ function Verify() {
 function Logs() {
   const [logs, setLogs]       = useState([]);
   const [loading, setLoading] = useState(true);
-  useEffect(() => {
-    api.logs().then(setLogs).catch(() => {}).finally(() => setLoading(false));
-  }, []);
+  const [clearing, setClearing] = useState(false);
+
+  function load() {
+    setLoading(true);
+    api.logs().then(setLogs).catch(e => toast.error(e.message)).finally(() => setLoading(false));
+  }
+  useEffect(() => { load(); }, []);
+
+  async function clearLogs() {
+    const ok = await confirmDialog({
+      title: "Clear all scan logs?",
+      message: "This permanently deletes every scan record. Student accounts and QR codes are not affected. This cannot be undone.",
+      confirmLabel: "Clear logs",
+      danger: true,
+    });
+    if (!ok) return;
+    setClearing(true);
+    try { await api.clearLogs(); toast.success("Scan logs cleared."); load(); }
+    catch(e) { toast.error(e.message); }
+    finally { setClearing(false); }
+  }
+
   return (
     <div className="card">
-      <h2>Recent Scan Logs</h2>
+      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:18}}>
+        <h2 style={{marginBottom:0}}>Recent Scan Logs</h2>
+        <button className="btn btn-outline btn-sm" onClick={clearLogs}
+          disabled={clearing || (!loading && logs.length===0)}>
+          {clearing ? "Clearing…" : "Clear Logs"}
+        </button>
+      </div>
       <div className="table-scroll">
         <table>
           <thead><tr><th>Time</th><th>Matric No</th><th>Name</th><th>Result</th><th>Scanned By</th></tr></thead>

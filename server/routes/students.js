@@ -209,7 +209,11 @@ router.get("/pending", auth(["admin"]), asyncHandler(async (req, res) => {
   res.json(rows);
 }));
 
-// Admin creates a student directly (active, QR generated immediately)
+// Clear all scan logs (admin). Student accounts and QR codes are untouched.
+router.delete("/logs/all", auth(["admin"]), asyncHandler(async (req, res) => {
+  const { rowCount } = await pool.query("DELETE FROM scan_logs");
+  res.json({ message: "Scan logs cleared", cleared: rowCount });
+}));
 router.post("/create", auth(["admin"]), async (req, res) => {
   const {
     matric_no, full_name, faculty, department, level, email, password,
