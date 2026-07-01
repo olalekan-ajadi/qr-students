@@ -78,10 +78,11 @@ export const api = {
   register: (s) => request("/auth/register", { method: "POST", body: s }),
   login: (email, password) => request("/auth/login", { method: "POST", body: { email, password } }),
   // admin
-  listStudents: () => request("/students"),
   listPending: () => request("/students/pending"),
+  listRejected: () => request("/students/rejected"),
   approve: (id) => request(`/students/${id}/approve`, { method: "POST" }),
   reject: (id) => request(`/students/${id}/reject`, { method: "POST" }),
+  restoreStudent: (id) => request(`/students/${id}/restore`, { method: "POST" }),
   deleteStudent: (id) => request(`/students/${id}`, { method: "DELETE" }),
   getQR: (id) => request(`/students/${id}/qr`),
   getStudentDetail: (id) => request(`/students/${id}/detail`),

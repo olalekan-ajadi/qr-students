@@ -319,8 +319,35 @@ router.post("/:id/approve", auth(["admin"]), asyncHandler(async (req, res) => {
 
 // Reject
 router.post("/:id/reject", auth(["admin"]), asyncHandler(async (req, res) => {
-  await pool.query("UPDATE students SET status='rejected' WHERE student_id=$1", [req.params.id]);
+  // Mark the pending registration as rejected. The record is kept so it can be
+  // reviewed under the Rejected tab; the applicant can still register again
+  // because the registration route clears any rejected record for their email.
+  const { rowCount } = await pool.query(
+    "UPDATE students SET status='rejected' WHERE student_id=$1 AND status='pending'",
+    [req.params.id]
+  );
+  if (!rowCount) return res.status(404).json({ error: "Pending registration not found" });
   res.json({ message: "Student registration rejected" });
+}));
+
+// List rejected registrations
+router.get("/rejected", auth(["admin"]), asyncHandler(async (req, res) => {
+  const { rows } = await pool.query(
+    `SELECT student_id, matric_no, full_name, faculty, department, level,
+            dob, sex, state_of_origin, phone, email, photo, created_at
+     FROM students WHERE status='rejected' ORDER BY created_at DESC`
+  );
+  res.json(rows);
+}));
+
+// Restore a rejected registration back to pending (undo a rejection)
+router.post("/:id/restore", auth(["admin"]), asyncHandler(async (req, res) => {
+  const { rowCount } = await pool.query(
+    "UPDATE students SET status='pending' WHERE student_id=$1 AND status='rejected'",
+    [req.params.id]
+  );
+  if (!rowCount) return res.status(404).json({ error: "Rejected registration not found" });
+  res.json({ message: "Registration restored to pending" });
 }));
 
 // Delete

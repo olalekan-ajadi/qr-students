@@ -19,11 +19,12 @@ export default function AdminDashboard() {
       <TopBar />
       <div className="wrap">
         <div className="tabs">
-          {[["pending","Pending Approvals"],["students","Students"],["verify","Verify QR"],["logs","Scan Logs"]].map(([k,l]) => (
+          {[["pending","Pending Approvals"],["rejected","Rejected"],["students","Students"],["verify","Verify QR"],["logs","Scan Logs"]].map(([k,l]) => (
             <div key={k} className={"tab"+(tab===k?" active":"")} onClick={() => setTab(k)}>{l}</div>
           ))}
         </div>
         {tab==="pending"  && <Pending />}
+        {tab==="rejected" && <Rejected />}
         {tab==="students" && <Students />}
         {tab==="verify"   && <Verify />}
         {tab==="logs"     && <Logs />}
@@ -96,7 +97,71 @@ function Pending() {
     </div>
   );
 }
+// ── Rejected Registrations ────────────────────────────────
+function Rejected() {
+  const [list, setList]       = useState([]);
+  const [loading, setLoading] = useState(true);
 
+  async function load() {
+    setLoading(true);
+    try { setList(await api.listRejected()); }
+    catch(e) { toast.error(e.message); }
+    finally { setLoading(false); }
+  }
+  useEffect(() => { load(); }, []);
+
+  async function restore(id) {
+    try { await api.restoreStudent(id); toast.success("Moved back to pending approvals."); load(); }
+    catch(e) { toast.error(e.message); }
+  }
+  async function remove(id) {
+    if (!confirm("Permanently delete this rejected registration? This cannot be undone.")) return;
+    try { await api.deleteStudent(id); toast.success("Registration permanently deleted."); load(); }
+    catch(e) { toast.error(e.message); }
+  }
+
+  return (
+    <div className="card">
+      <h2>Rejected Registrations</h2>
+      <p className="muted" style={{marginTop:-8,marginBottom:16}}>
+        Rejected applications are kept here for reference. You can restore one to
+        pending, or delete it permanently. A rejected applicant can still register
+        again with the same details.
+      </p>
+      {loading && <p className="muted">Loading…</p>}
+      {!loading && list.length===0 && <p className="muted">No rejected registrations.</p>}
+      <div className="pending-grid">
+        {list.map(s => (
+          <div className="pending-item" key={s.student_id}>
+            {s.photo
+              ? <img src={s.photo} alt={s.full_name} className="passport"/>
+              : <div className="passport-placeholder">?</div>}
+            <div style={{flex:1,minWidth:0}}>
+              <div style={{display:"flex",alignItems:"baseline",gap:8,flexWrap:"wrap"}}>
+                <b style={{fontSize:15}}>{s.full_name}</b>
+                <span className="muted" style={{fontSize:12}}>{s.matric_no}</span>
+                <span className="badge inactive">rejected</span>
+              </div>
+              <div className="pending-meta">
+                {s.faculty && <span>{s.faculty}</span>}
+                <span>{s.department}</span>
+                <span>{s.level}L</span>
+              </div>
+              <div className="pending-meta">
+                <span>{s.email}</span>
+                {s.phone && <span>{s.phone}</span>}
+              </div>
+              <div style={{marginTop:10, display:"flex", gap:8}}>
+                <button className="btn btn-outline btn-sm" onClick={() => restore(s.student_id)}>Restore to pending</button>
+                <button className="btn btn-danger btn-sm" onClick={() => remove(s.student_id)}>Delete</button>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
 // ── Students ──────────────────────────────────────────────
 function Students() {
   const [list, setList]       = useState([]);
