@@ -197,6 +197,9 @@ tbody tr:hover td{background:#F5F9FF}
 .kv b{color:var(--ink);text-align:right}
 .kv:last-child{border-bottom:none}
 .scanner-region{max-width:340px;margin:0 auto;border-radius:12px;overflow:hidden}
+.scanner-video{width:100%;aspect-ratio:1/1;object-fit:cover;background:#0d1626;border-radius:12px;display:block}
+.scanner-region video{border-radius:12px;width:100%}
+.scanner-hint{text-align:center;margin:10px 0 0}
 .scanner-wrap{display:flex;flex-direction:column;gap:0}
 textarea{min-height:84px;font-family:ui-monospace,'SF Mono',Menlo,monospace;font-size:13px;resize:vertical}
 
