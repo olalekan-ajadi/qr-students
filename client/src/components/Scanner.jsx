@@ -1,15 +1,89 @@
 import { useEffect, useRef, useState } from "react";
 
-// QR scanner with a live back-camera preview.
-// Primary path: getUserMedia + the native BarcodeDetector (fast, real-time,
-// works on Android Chrome). Fallback: the html5-qrcode library for browsers
-// without BarcodeDetector (e.g. iOS Safari, Firefox). Camera errors are shown
-// to the user instead of being swallowed.
+// Decode a QR from an image File without needing any visible DOM element.
+// Draws the photo to a canvas, then reads it with the native BarcodeDetector
+// (Android/Chrome) or falls back to the jsQR decoder (iOS Safari, Firefox).
+export async function decodeImageFile(file) {
+  const url = URL.createObjectURL(file);
+  try {
+    const img = new Image();
+    img.decoding = "async";
+    await new Promise((res, rej) => {
+      img.onload = res; img.onerror = () => rej(new Error("Could not read that image"));
+      img.src = url;
+    });
+    const maxDim = 1600; // downscale big phone photos for reliable, fast decoding
+    const scale = Math.min(1, maxDim / Math.max(img.naturalWidth, img.naturalHeight));
+    const w = Math.max(1, Math.round(img.naturalWidth * scale));
+    const h = Math.max(1, Math.round(img.naturalHeight * scale));
+    const canvas = document.createElement("canvas");
+    canvas.width = w; canvas.height = h;
+    const ctx = canvas.getContext("2d", { willReadFrequently: true });
+    ctx.drawImage(img, 0, 0, w, h);
+
+    if ("BarcodeDetector" in window) {
+      try {
+        const fmts = await window.BarcodeDetector.getSupportedFormats();
+        if (fmts.includes("qr_code")) {
+          const det = new window.BarcodeDetector({ formats: ["qr_code"] });
+          const codes = await det.detect(canvas);
+          if (codes && codes.length) return codes[0].rawValue;
+        }
+      } catch { /* fall through to jsQR */ }
+    }
+    const { default: jsQR } = await import("jsqr");
+    const data = ctx.getImageData(0, 0, w, h);
+    const result = jsQR(data.data, w, h, { inversionAttempts: "attemptBoth" });
+    return result?.data || null;
+  } finally {
+    URL.revokeObjectURL(url);
+  }
+}
+
+// Photo-capture fallback. Opens the native camera to take a still photo, then
+// decodes the QR from that image. Works on every phone (including iPhones,
+// where live camera scanning is blocked by iOS browsers).
+export function PhotoScan({ onDecode, onError, label }) {
+  const inputRef = useRef(null);
+  const [busy, setBusy] = useState(false);
+
+  async function handleFile(e) {
+    const file = e.target.files?.[0];
+    e.target.value = ""; // allow picking the same file again
+    if (!file) return;
+    setBusy(true);
+    try {
+      const text = await decodeImageFile(file);
+      if (text) onDecode(text);
+      else onError?.("No QR code was found in that photo. Fill the frame with the code, hold steady, and try again.");
+    } catch {
+      onError?.("Could not read that photo. Please try again.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <>
+      <input ref={inputRef} type="file" accept="image/*" capture="environment"
+             onChange={handleFile} style={{ display: "none" }} />
+      <button type="button" className="btn btn-outline" style={{ width: "100%" }}
+              disabled={busy} onClick={() => inputRef.current?.click()}>
+        {busy ? "Reading photo…" : (label || "Take a photo of the QR code")}
+      </button>
+    </>
+  );
+}
+
+// Live QR scanner with a back-camera preview. Primary path: getUserMedia + the
+// native BarcodeDetector (Android Chrome). Fallback: html5-qrcode. If the live
+// camera can't start (notably on iPhones), a "Take a photo" option is offered
+// right in the error, so there is only ever one scan action to start with.
 export default function Scanner({ onScan }) {
   const videoRef = useRef(null);
   const fallbackId = useRef("reader-" + Math.random().toString(36).slice(2));
   const onScanRef = useRef(onScan);
-  const [mode, setMode] = useState(null);        // 'native' | 'fallback'
+  const [mode, setMode] = useState(null);          // 'native' | 'fallback'
   const [status, setStatus] = useState("starting"); // starting | live | error
   const [error, setError] = useState("");
   useEffect(() => { onScanRef.current = onScan; }, [onScan]);
@@ -20,12 +94,12 @@ export default function Scanner({ onScan }) {
     const friendly = (e) => {
       const n = e?.name || "";
       if (n === "NotAllowedError" || n === "SecurityError")
-        return "Camera permission is blocked. Tap the site-settings (padlock) icon in your browser, allow Camera for this site, then reopen the scanner.";
+        return "Camera permission is blocked. Allow Camera for this site in your browser settings, or use the photo option below.";
       if (n === "NotFoundError" || n === "OverconstrainedError")
         return "No suitable camera was found on this device.";
       if (n === "NotReadableError")
         return "The camera is in use by another app. Close it and try again.";
-      return "Could not start the camera. " + (e?.message || "You can paste the QR payload below instead.");
+      return "This device won’t open a live camera in the browser (common on iPhone). Use the photo option below instead.";
     };
 
     async function startNative() {
@@ -44,7 +118,7 @@ export default function Scanner({ onScan }) {
           try {
             const codes = await detector.detect(video);
             if (codes && codes.length) onScanRef.current(codes[0].rawValue);
-          } catch { /* transient decode error — keep scanning */ }
+          } catch { /* transient */ }
         }
         timer = setTimeout(tick, 150);
       };
@@ -72,7 +146,7 @@ export default function Scanner({ onScan }) {
         setStatus("error"); setError("The camera needs a secure (https) connection."); return;
       }
       if (!navigator.mediaDevices?.getUserMedia) {
-        setStatus("error"); setError("This browser does not support camera access. Please paste the QR payload below."); return;
+        setStatus("error"); setError("This browser can’t open a live camera. Use the photo option below."); return;
       }
       let useNative = false;
       if ("BarcodeDetector" in window) {
@@ -85,7 +159,6 @@ export default function Scanner({ onScan }) {
         if (useNative) { setMode("native"); await startNative(); }
         else { setMode("fallback"); await startFallback(); }
       } catch (e) {
-        // If the native path failed unexpectedly, try the library once.
         if (useNative && !stopped) {
           try {
             if (stream) { stream.getTracks().forEach(t => t.stop()); stream = null; }
@@ -107,57 +180,22 @@ export default function Scanner({ onScan }) {
 
   return (
     <div className="scanner-region">
-      <video ref={videoRef} className="scanner-video"
-             style={{ display: mode === "fallback" ? "none" : "block" }}
-             muted playsInline autoPlay />
-      <div id={fallbackId.current}></div>
-      {status === "starting" && <p className="muted scanner-hint">Starting camera…</p>}
-      {status === "error" && <div className="alert err" style={{ marginTop: 10 }}>{error}</div>}
+      {status !== "error" && (
+        <>
+          <video ref={videoRef} className="scanner-video"
+                 style={{ display: mode === "fallback" ? "none" : "block" }}
+                 muted playsInline autoPlay />
+          <div id={fallbackId.current}></div>
+          {status === "starting" && <p className="muted scanner-hint">Starting camera…</p>}
+        </>
+      )}
+      {status === "error" && (
+        <div>
+          <div className="alert err" style={{ marginBottom: 10 }}>{error}</div>
+          <PhotoScan onDecode={(t) => onScanRef.current(t)} onError={setError}
+                     label="Take a photo of the QR code" />
+        </div>
+      )}
     </div>
-  );
-}
-
-// Photo-capture fallback for devices where live camera scanning is blocked
-// (notably iPhones — iOS browsers don't allow reliable live getUserMedia in
-// every context). Uses the native camera to take a still photo, then decodes
-// the QR from that image with html5-qrcode's scanFile (no live stream needed).
-export function PhotoScan({ onDecode, onError, label }) {
-  const inputRef = useRef(null);
-  const [busy, setBusy] = useState(false);
-
-  async function handleFile(e) {
-    const file = e.target.files?.[0];
-    e.target.value = ""; // allow picking the same file again
-    if (!file) return;
-    setBusy(true);
-    let el;
-    try {
-      const { Html5Qrcode } = await import("html5-qrcode");
-      const tmpId = "photoscan-" + Math.random().toString(36).slice(2);
-      el = document.createElement("div");
-      el.id = tmpId;
-      el.style.display = "none";
-      document.body.appendChild(el);
-      const h = new Html5Qrcode(tmpId, { verbose: false });
-      const text = await h.scanFile(file, false);
-      await h.clear().catch(() => {});
-      onDecode(text);
-    } catch {
-      onError?.("No QR code was found in that photo. Fill the frame with the code, hold steady, and try again.");
-    } finally {
-      if (el) el.remove();
-      setBusy(false);
-    }
-  }
-
-  return (
-    <>
-      <input ref={inputRef} type="file" accept="image/*" capture="environment"
-             onChange={handleFile} style={{ display: "none" }} />
-      <button type="button" className="btn btn-outline" style={{ width: "100%" }}
-              disabled={busy} onClick={() => inputRef.current?.click()}>
-        {busy ? "Reading photo…" : (label || "Take a photo of the QR code")}
-      </button>
-    </>
   );
 }

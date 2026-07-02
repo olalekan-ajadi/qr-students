@@ -1,6 +1,6 @@
 import { useEffect, useState, useRef } from "react";
 import TopBar from "../components/TopBar.jsx";
-import Scanner, { PhotoScan } from "../components/Scanner.jsx";
+import Scanner, { decodeImageFile } from "../components/Scanner.jsx";
 import { api } from "../api.js";
 import { toast } from "../toast.jsx";
 import { confirmDialog } from "../confirm.jsx";
@@ -593,7 +593,20 @@ function Verify() {
   const [err, setErr]           = useState("");
   const [scanning, setScanning] = useState(false);
   const [verifying, setVerifying] = useState(false);
+  const [photoBusy, setPhotoBusy] = useState(false);
   const lastScanAt = useRef(0);
+  const photoInputRef = useRef(null);
+
+  // iPhones/iPads can't open a live camera in the browser reliably, so there the
+  // scan button opens the photo camera directly (one tap). Everywhere else it
+  // opens the live scanner. Decided synchronously so the tap still counts as the
+  // user gesture the camera capture requires.
+  const isIOS = typeof navigator !== "undefined" &&
+    (/iP(hone|od|ad)/.test(navigator.userAgent) ||
+     (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1));
+  const hasLiveCamera = typeof navigator !== "undefined" &&
+    !!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia);
+  const preferPhoto = isIOS || !hasLiveCamera;
 
   async function run(text) {
     if (!text?.trim()) return;
@@ -611,6 +624,25 @@ function Verify() {
     lastScanAt.current = now;
     setPayload(text);
     run(text);
+  }
+
+  function startScan() {
+    setErr("");
+    if (preferPhoto) photoInputRef.current?.click();
+    else setScanning(true);
+  }
+
+  async function onPhotoPicked(e) {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file) return;
+    setErr(""); setPhotoBusy(true);
+    try {
+      const text = await decodeImageFile(file);
+      if (text) { setPayload(text); run(text); }
+      else setErr("No QR code was found in that photo. Fill the frame with the code, hold steady, and try again.");
+    } catch { setErr("Could not read that photo. Please try again."); }
+    finally { setPhotoBusy(false); }
   }
 
   // Cancel resets the entire verify state and closes the camera.
@@ -631,26 +663,23 @@ function Verify() {
         {!scanning ? (
           <>
             <button className="btn btn-teal" style={{width:"100%"}}
-              onClick={() => setScanning(true)}>
-              Open Camera Scanner
+              disabled={photoBusy} onClick={startScan}>
+              {photoBusy ? "Reading photo…" : "Open Camera Scanner"}
             </button>
-            <div style={{marginTop:10}}>
-              <PhotoScan onDecode={(t) => { setErr(""); setPayload(t); run(t); }} onError={setErr} />
-            </div>
-            <p className="muted" style={{margin:"8px 0 0",fontSize:12,textAlign:"center"}}>
-              On iPhone, use “Take a photo of the QR code” — live camera scanning isn’t supported by iOS browsers.
-            </p>
+            <input ref={photoInputRef} type="file" accept="image/*" capture="environment"
+              onChange={onPhotoPicked} style={{display:"none"}} />
+            {preferPhoto && (
+              <p className="muted" style={{margin:"8px 0 0",fontSize:12,textAlign:"center"}}>
+                Tap to open the camera and take a photo of the student’s QR code.
+              </p>
+            )}
           </>
         ) : (
           <div className="scanner-wrap">
             <Scanner onScan={onScan}/>
             <p className="muted" style={{margin:"8px 0 4px",fontSize:12,textAlign:"center"}}>
-              Camera active — present student QR code. Results update automatically.
+              Present the student QR code — the result updates automatically.
             </p>
-            <div style={{marginBottom:8}}>
-              <PhotoScan onDecode={(t) => { setErr(""); setPayload(t); run(t); }} onError={setErr}
-                         label="Camera not opening? Take a photo instead" />
-            </div>
             <button className="btn btn-danger" style={{width:"100%"}} onClick={cancel}>
               ✕ Cancel Scan
             </button>
