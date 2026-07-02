@@ -66,7 +66,8 @@ export default function Register() {
       const res = await api.register({ ...form, photo: photo.dataUrl });
       const m = res.message || "Registration received. Your account is awaiting admin approval.";
       toast.success(m);
-      nav("/login", { state: { notice: m } });
+      try { sessionStorage.setItem("authNotice", m); } catch {}
+      nav("/student/login");
     } catch (ex) { setErr(ex.message); toast.error(ex.message); }
     finally { setBusy(false); }
   }
@@ -184,7 +185,7 @@ export default function Register() {
           {busy ? "Submitting…" : "Submit Registration"}
         </button>
         <p className="muted" style={{ textAlign: "center", marginTop: 14 }}>
-          Already activated? <Link to="/login">Sign in</Link>
+          Already activated? <Link to="/student/login">Sign in</Link>
         </p>
       </div>
     </div>

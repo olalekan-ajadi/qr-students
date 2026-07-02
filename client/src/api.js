@@ -67,7 +67,10 @@ async function request(path, { method = "GET", body } = {}) {
         "Your session has expired or no longer has access. Please sign in again."
       );
     } catch {}
-    if (!window.location.pathname.startsWith("/login")) window.location.href = "/login";
+    if (!window.location.pathname.endsWith("/login")) {
+      window.location.href =
+        role === "admin" ? "/admin/login" : role === "student" ? "/student/login" : "/";
+    }
     throw new Error("Please sign in again");
   }
   if (!res.ok) throw new Error(data.error || "Request failed");

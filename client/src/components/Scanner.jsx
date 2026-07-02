@@ -116,3 +116,48 @@ export default function Scanner({ onScan }) {
     </div>
   );
 }
+
+// Photo-capture fallback for devices where live camera scanning is blocked
+// (notably iPhones — iOS browsers don't allow reliable live getUserMedia in
+// every context). Uses the native camera to take a still photo, then decodes
+// the QR from that image with html5-qrcode's scanFile (no live stream needed).
+export function PhotoScan({ onDecode, onError, label }) {
+  const inputRef = useRef(null);
+  const [busy, setBusy] = useState(false);
+
+  async function handleFile(e) {
+    const file = e.target.files?.[0];
+    e.target.value = ""; // allow picking the same file again
+    if (!file) return;
+    setBusy(true);
+    let el;
+    try {
+      const { Html5Qrcode } = await import("html5-qrcode");
+      const tmpId = "photoscan-" + Math.random().toString(36).slice(2);
+      el = document.createElement("div");
+      el.id = tmpId;
+      el.style.display = "none";
+      document.body.appendChild(el);
+      const h = new Html5Qrcode(tmpId, { verbose: false });
+      const text = await h.scanFile(file, false);
+      await h.clear().catch(() => {});
+      onDecode(text);
+    } catch {
+      onError?.("No QR code was found in that photo. Fill the frame with the code, hold steady, and try again.");
+    } finally {
+      if (el) el.remove();
+      setBusy(false);
+    }
+  }
+
+  return (
+    <>
+      <input ref={inputRef} type="file" accept="image/*" capture="environment"
+             onChange={handleFile} style={{ display: "none" }} />
+      <button type="button" className="btn btn-outline" style={{ width: "100%" }}
+              disabled={busy} onClick={() => inputRef.current?.click()}>
+        {busy ? "Reading photo…" : (label || "Take a photo of the QR code")}
+      </button>
+    </>
+  );
+}

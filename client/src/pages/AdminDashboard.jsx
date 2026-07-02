@@ -1,6 +1,6 @@
 import { useEffect, useState, useRef } from "react";
 import TopBar from "../components/TopBar.jsx";
-import Scanner from "../components/Scanner.jsx";
+import Scanner, { PhotoScan } from "../components/Scanner.jsx";
 import { api } from "../api.js";
 import { toast } from "../toast.jsx";
 import { confirmDialog } from "../confirm.jsx";
@@ -24,13 +24,156 @@ export default function AdminDashboard() {
             <div key={k} className={"tab"+(tab===k?" active":"")} onClick={() => setTab(k)}>{l}</div>
           ))}
         </div>
-        {tab==="students" && <Students />}
         {tab==="pending"  && <Pending />}
         {tab==="rejected" && <Rejected />}
+        {tab==="students" && <Students />}
         {tab==="verify"   && <Verify />}
         {tab==="logs"     && <Logs />}
       </div>
     </>
+  );
+}
+
+// ── Pending Approvals ─────────────────────────────────────
+function Pending() {
+  const [list, setList]       = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  async function load() {
+    setLoading(true);
+    try { setList(await api.listPending()); }
+    catch(e) { toast.error(e.message); }
+    finally { setLoading(false); }
+  }
+  useEffect(() => { load(); }, []);
+
+  async function approve(id) {
+    try { await api.approve(id); toast.success("Student approved and QR generated."); load(); }
+    catch(e) { toast.error(e.message); }
+  }
+  async function reject(id, name) {
+    const ok = await confirmDialog({
+      title: "Reject this registration?",
+      message: `${name || "This registration"} will be moved to the Rejected tab. You can restore or permanently delete it later.`,
+      confirmLabel: "Reject",
+      danger: true,
+    });
+    if (!ok) return;
+    try { await api.reject(id); toast.success("Registration rejected."); load(); }
+    catch(e) { toast.error(e.message); }
+  }
+
+  return (
+    <div className="card">
+      <h2>Pending Registrations</h2>
+      {loading && <p className="muted">Loading…</p>}
+      {!loading && list.length===0 && <p className="muted">No pending registrations.</p>}
+      <div className="pending-grid">
+        {list.map(s => (
+          <div className="pending-item" key={s.student_id}>
+            {s.photo
+              ? <img src={s.photo} alt={s.full_name} className="passport"/>
+              : <div className="passport-placeholder">?</div>}
+            <div style={{flex:1,minWidth:0}}>
+              <div style={{display:"flex",alignItems:"baseline",gap:8,flexWrap:"wrap"}}>
+                <b style={{fontSize:15}}>{s.full_name}</b>
+                <span className="muted" style={{fontSize:12}}>{s.matric_no}</span>
+              </div>
+              <div className="pending-meta">
+                {s.faculty && <span>{s.faculty}</span>}
+                <span>{s.department}</span>
+                <span>{s.level}L</span>
+              </div>
+              <div className="pending-meta">
+                {s.dob && <span>DOB: {fmtDate(s.dob)}</span>}
+                {s.sex && <span>{s.sex}</span>}
+                {s.state_of_origin && <span>{s.state_of_origin}</span>}
+              </div>
+              <div className="pending-meta">
+                <span>{s.email}</span>
+                {s.phone && <span>{s.phone}</span>}
+              </div>
+              <div style={{marginTop:10, display:"flex", gap:8}}>
+                <button className="btn btn-teal btn-sm" onClick={() => approve(s.student_id)}>Approve</button>
+                <button className="btn btn-danger btn-sm" onClick={() => reject(s.student_id, s.full_name)}>Reject</button>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ── Rejected Registrations ────────────────────────────────
+function Rejected() {
+  const [list, setList]       = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  async function load() {
+    setLoading(true);
+    try { setList(await api.listRejected()); }
+    catch(e) { toast.error(e.message); }
+    finally { setLoading(false); }
+  }
+  useEffect(() => { load(); }, []);
+
+  async function restore(id) {
+    try { await api.restoreStudent(id); toast.success("Moved back to pending approvals."); load(); }
+    catch(e) { toast.error(e.message); }
+  }
+  async function remove(id, name) {
+    const ok = await confirmDialog({
+      title: "Delete permanently?",
+      message: `This permanently removes the rejected registration for ${name || "this applicant"}. This cannot be undone.`,
+      confirmLabel: "Delete",
+      danger: true,
+    });
+    if (!ok) return;
+    try { await api.deleteStudent(id); toast.success("Registration permanently deleted."); load(); }
+    catch(e) { toast.error(e.message); }
+  }
+
+  return (
+    <div className="card">
+      <h2>Rejected Registrations</h2>
+      <p className="muted" style={{marginTop:-8,marginBottom:16}}>
+        Rejected applications are kept here for reference. You can restore one to
+        pending, or delete it permanently. A rejected applicant can still register
+        again with the same details.
+      </p>
+      {loading && <p className="muted">Loading…</p>}
+      {!loading && list.length===0 && <p className="muted">No rejected registrations.</p>}
+      <div className="pending-grid">
+        {list.map(s => (
+          <div className="pending-item" key={s.student_id}>
+            {s.photo
+              ? <img src={s.photo} alt={s.full_name} className="passport"/>
+              : <div className="passport-placeholder">?</div>}
+            <div style={{flex:1,minWidth:0}}>
+              <div style={{display:"flex",alignItems:"baseline",gap:8,flexWrap:"wrap"}}>
+                <b style={{fontSize:15}}>{s.full_name}</b>
+                <span className="muted" style={{fontSize:12}}>{s.matric_no}</span>
+                <span className="badge inactive">rejected</span>
+              </div>
+              <div className="pending-meta">
+                {s.faculty && <span>{s.faculty}</span>}
+                <span>{s.department}</span>
+                <span>{s.level}L</span>
+              </div>
+              <div className="pending-meta">
+                <span>{s.email}</span>
+                {s.phone && <span>{s.phone}</span>}
+              </div>
+              <div style={{marginTop:10, display:"flex", gap:8}}>
+                <button className="btn btn-outline btn-sm" onClick={() => restore(s.student_id)}>Restore to pending</button>
+                <button className="btn btn-danger btn-sm" onClick={() => remove(s.student_id, s.full_name)}>Delete</button>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
   );
 }
 
@@ -443,151 +586,6 @@ function StudentForm({ title, initial = {}, onSave, onCancel }) {
   );
 }
 
-// ── Pending Approvals ─────────────────────────────────────
-function Pending() {
-  const [list, setList]       = useState([]);
-  const [loading, setLoading] = useState(true);
-
-  async function load() {
-    setLoading(true);
-    try { setList(await api.listPending()); }
-    catch(e) { toast.error(e.message); }
-    finally { setLoading(false); }
-  }
-  useEffect(() => { load(); }, []);
-
-  async function approve(id) {
-    try { await api.approve(id); toast.success("Student approved and QR generated."); load(); }
-    catch(e) { toast.error(e.message); }
-  }
-  async function reject(id, name) {
-    const ok = await confirmDialog({
-      title: "Reject this registration?",
-      message: `${name || "This registration"} will be moved to the Rejected tab. You can restore or permanently delete it later.`,
-      confirmLabel: "Reject",
-      danger: true,
-    });
-    if (!ok) return;
-    try { await api.reject(id); toast.success("Registration rejected."); load(); }
-    catch(e) { toast.error(e.message); }
-  }
-
-  return (
-    <div className="card">
-      <h2>Pending Registrations</h2>
-      {loading && <p className="muted">Loading…</p>}
-      {!loading && list.length===0 && <p className="muted">No pending registrations.</p>}
-      <div className="pending-grid">
-        {list.map(s => (
-          <div className="pending-item" key={s.student_id}>
-            {s.photo
-              ? <img src={s.photo} alt={s.full_name} className="passport"/>
-              : <div className="passport-placeholder">?</div>}
-            <div style={{flex:1,minWidth:0}}>
-              <div style={{display:"flex",alignItems:"baseline",gap:8,flexWrap:"wrap"}}>
-                <b style={{fontSize:15}}>{s.full_name}</b>
-                <span className="muted" style={{fontSize:12}}>{s.matric_no}</span>
-              </div>
-              <div className="pending-meta">
-                {s.faculty && <span>{s.faculty}</span>}
-                <span>{s.department}</span>
-                <span>{s.level}L</span>
-              </div>
-              <div className="pending-meta">
-                {s.dob && <span>DOB: {fmtDate(s.dob)}</span>}
-                {s.sex && <span>{s.sex}</span>}
-                {s.state_of_origin && <span>{s.state_of_origin}</span>}
-              </div>
-              <div className="pending-meta">
-                <span>{s.email}</span>
-                {s.phone && <span>{s.phone}</span>}
-              </div>
-              <div style={{marginTop:10, display:"flex", gap:8}}>
-                <button className="btn btn-teal btn-sm" onClick={() => approve(s.student_id)}>Approve</button>
-                <button className="btn btn-danger btn-sm" onClick={() => reject(s.student_id, s.full_name)}>Reject</button>
-              </div>
-            </div>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
-
-// ── Rejected Registrations ────────────────────────────────
-function Rejected() {
-  const [list, setList]       = useState([]);
-  const [loading, setLoading] = useState(true);
-
-  async function load() {
-    setLoading(true);
-    try { setList(await api.listRejected()); }
-    catch(e) { toast.error(e.message); }
-    finally { setLoading(false); }
-  }
-  useEffect(() => { load(); }, []);
-
-  async function restore(id) {
-    try { await api.restoreStudent(id); toast.success("Moved back to pending approvals."); load(); }
-    catch(e) { toast.error(e.message); }
-  }
-  async function remove(id, name) {
-    const ok = await confirmDialog({
-      title: "Delete permanently?",
-      message: `This permanently removes the rejected registration for ${name || "this applicant"}. This cannot be undone.`,
-      confirmLabel: "Delete",
-      danger: true,
-    });
-    if (!ok) return;
-    try { await api.deleteStudent(id); toast.success("Registration permanently deleted."); load(); }
-    catch(e) { toast.error(e.message); }
-  }
-
-  return (
-    <div className="card">
-      <h2>Rejected Registrations</h2>
-      <p className="muted" style={{marginTop:-8,marginBottom:16}}>
-        Rejected applications are kept here for reference. You can restore one to
-        pending, or delete it permanently. A rejected applicant can still register
-        again with the same details.
-      </p>
-      {loading && <p className="muted">Loading…</p>}
-      {!loading && list.length===0 && <p className="muted">No rejected registrations.</p>}
-      <div className="pending-grid">
-        {list.map(s => (
-          <div className="pending-item" key={s.student_id}>
-            {s.photo
-              ? <img src={s.photo} alt={s.full_name} className="passport"/>
-              : <div className="passport-placeholder">?</div>}
-            <div style={{flex:1,minWidth:0}}>
-              <div style={{display:"flex",alignItems:"baseline",gap:8,flexWrap:"wrap"}}>
-                <b style={{fontSize:15}}>{s.full_name}</b>
-                <span className="muted" style={{fontSize:12}}>{s.matric_no}</span>
-                <span className="badge inactive">rejected</span>
-              </div>
-              <div className="pending-meta">
-                {s.faculty && <span>{s.faculty}</span>}
-                <span>{s.department}</span>
-                <span>{s.level}L</span>
-              </div>
-              <div className="pending-meta">
-                <span>{s.email}</span>
-                {s.phone && <span>{s.phone}</span>}
-              </div>
-              <div style={{marginTop:10, display:"flex", gap:8}}>
-                <button className="btn btn-outline btn-sm" onClick={() => restore(s.student_id)}>Restore to pending</button>
-                <button className="btn btn-danger btn-sm" onClick={() => remove(s.student_id, s.full_name)}>Delete</button>
-              </div>
-            </div>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
-
-
-
 // ── Verify QR ─────────────────────────────────────────────
 function Verify() {
   const [payload, setPayload]   = useState("");
@@ -631,16 +629,28 @@ function Verify() {
         <h2>Verify QR Code</h2>
 
         {!scanning ? (
-          <button className="btn btn-teal" style={{width:"100%"}}
-            onClick={() => setScanning(true)}>
-            Open Camera Scanner
-          </button>
+          <>
+            <button className="btn btn-teal" style={{width:"100%"}}
+              onClick={() => setScanning(true)}>
+              Open Camera Scanner
+            </button>
+            <div style={{marginTop:10}}>
+              <PhotoScan onDecode={(t) => { setErr(""); setPayload(t); run(t); }} onError={setErr} />
+            </div>
+            <p className="muted" style={{margin:"8px 0 0",fontSize:12,textAlign:"center"}}>
+              On iPhone, use “Take a photo of the QR code” — live camera scanning isn’t supported by iOS browsers.
+            </p>
+          </>
         ) : (
           <div className="scanner-wrap">
             <Scanner onScan={onScan}/>
             <p className="muted" style={{margin:"8px 0 4px",fontSize:12,textAlign:"center"}}>
               Camera active — present student QR code. Results update automatically.
             </p>
+            <div style={{marginBottom:8}}>
+              <PhotoScan onDecode={(t) => { setErr(""); setPayload(t); run(t); }} onError={setErr}
+                         label="Camera not opening? Take a photo instead" />
+            </div>
             <button className="btn btn-danger" style={{width:"100%"}} onClick={cancel}>
               ✕ Cancel Scan
             </button>

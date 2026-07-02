@@ -25,7 +25,11 @@ export default function TopBar() {
           </span>
         )}
         <button className="btn btn-ghost btn-sm"
-          onClick={() => { clearSession(); nav("/login"); }}>
+          onClick={() => {
+            const role = s?.role;
+            clearSession();
+            nav(role === "admin" ? "/admin/login" : role === "student" ? "/student/login" : "/");
+          }}>
           Logout
         </button>
       </div>

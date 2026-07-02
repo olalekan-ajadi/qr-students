@@ -204,6 +204,27 @@ tbody tr:hover td{background:#F5F9FF}
 .login-divider{height:1px;background:var(--line);margin:20px 0}
 .login-card p.sub{text-align:center;color:var(--grey);font-size:13px;margin:0 0 18px}
 
+/* role banner on each login screen */
+.role-banner{display:flex;align-items:center;justify-content:center;gap:8px;margin-top:18px;padding:10px 14px;border-radius:10px;font-weight:700;font-size:14px}
+.role-banner.navy{background:#EAF0FA;color:var(--navy-700)}
+.role-banner.teal{background:#E4F5F2;color:#177a6f}
+.role-ic{display:inline-flex}
+.login-alt{display:flex;align-items:center;justify-content:center;gap:10px;margin-top:16px;font-size:13px}
+.login-alt a{color:var(--blue);text-decoration:none;font-weight:600}
+.login-alt a:hover{text-decoration:underline}
+.login-alt span{color:var(--line)}
+
+/* landing portal chooser */
+.portal-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:6px}
+.portal-card{display:flex;flex-direction:column;align-items:center;text-align:center;gap:8px;padding:22px 14px;border:1.5px solid var(--line);border-radius:14px;text-decoration:none;background:#fff;transition:border-color .16s,box-shadow .16s,transform .16s}
+.portal-card:hover{border-color:var(--blue);box-shadow:0 8px 22px rgba(22,36,63,.12);transform:translateY(-2px)}
+.portal-card b{color:var(--navy-700);font-size:15px}
+.portal-desc{color:var(--grey);font-size:12px;line-height:1.4}
+.portal-ic{width:52px;height:52px;border-radius:50%;display:flex;align-items:center;justify-content:center}
+.portal-ic.navy{background:#EAF0FA;color:var(--navy-700)}
+.portal-ic.teal{background:#E4F5F2;color:#177a6f}
+@media(max-width:420px){.portal-grid{grid-template-columns:1fr}}
+
 /* ── QR box (student portal + admin) ───────────────────── */
 .qr-box{text-align:center;padding:18px}
 .qr-box img{width:240px;height:240px;border:1px solid var(--line);border-radius:14px;padding:12px;background:#fff;box-shadow:var(--shadow-md)}
