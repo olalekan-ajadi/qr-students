@@ -35,11 +35,3 @@ ALTER TABLE students ADD COLUMN IF NOT EXISTS sex             VARCHAR(10);
 ALTER TABLE students ADD COLUMN IF NOT EXISTS state_of_origin VARCHAR(60);
 ALTER TABLE students ADD COLUMN IF NOT EXISTS phone           VARCHAR(20);
 ALTER TABLE students ADD COLUMN IF NOT EXISTS address         TEXT;
-
-CREATE TABLE IF NOT EXISTS scan_logs (
-  log_id     SERIAL PRIMARY KEY,
-  student_id INTEGER REFERENCES students(student_id) ON DELETE SET NULL,
-  scanned_by VARCHAR(120),
-  result     VARCHAR(20) NOT NULL,
-  scanned_at TIMESTAMP DEFAULT NOW()
-);

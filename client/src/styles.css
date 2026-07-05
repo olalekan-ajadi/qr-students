@@ -310,3 +310,31 @@ textarea{min-height:84px;font-family:ui-monospace,'SF Mono',Menlo,monospace;font
 @media(prefers-reduced-motion:reduce){
   *{animation-duration:.001ms !important;transition-duration:.001ms !important}
 }
+
+/* ── Public verification page ────────────────────────────── */
+.vr-page{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px;
+  background:linear-gradient(160deg,#0E1A30 0%,#16243F 60%,#21406f 100%)}
+.vr-card{background:#fff;border-radius:18px;max-width:430px;width:100%;padding:22px 22px 16px;
+  box-shadow:0 24px 60px rgba(0,0,0,.35)}
+.vr-brand{display:flex;align-items:center;gap:12px;padding-bottom:16px;border-bottom:1px solid var(--line)}
+.vr-logo{width:46px;height:46px;border-radius:10px;object-fit:contain;background:#fff}
+.vr-school{font-weight:800;color:var(--navy-700);font-size:16px;line-height:1.15}
+.vr-sub{color:var(--grey);font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.04em}
+.vr-loading{text-align:center;color:var(--grey);padding:34px 0;font-size:15px}
+.vr-status{border-radius:14px;padding:18px;text-align:center;margin:18px 0}
+.vr-badge{font-size:22px;font-weight:800;letter-spacing:.01em}
+.vr-note{margin:6px 0 0;font-size:13px;line-height:1.45}
+.vr-ok{background:#E4F7EE;color:#137a52}
+.vr-ok .vr-note{color:#1c8a60}
+.vr-warn{background:#FEF3E2;color:#b5730c}
+.vr-warn .vr-note{color:#c07d13}
+.vr-bad{background:#FBE7E8;color:#c0343f}
+.vr-bad .vr-note{color:#c94a54}
+.vr-student{display:flex;gap:16px;align-items:center;padding:6px 4px 10px}
+.vr-photo{width:92px;height:110px;border-radius:10px;object-fit:cover;border:2px solid var(--line);flex:0 0 auto}
+.vr-photo-empty{display:flex;align-items:center;justify-content:center;background:#EDF1F8;color:#9fb0c9;font-size:32px;font-weight:700}
+.vr-fields{min-width:0}
+.vr-name{font-weight:800;color:var(--navy-700);font-size:18px;line-height:1.2}
+.vr-matric{color:var(--blue);font-weight:700;font-size:14px;margin-top:2px}
+.vr-meta{display:flex;flex-direction:column;gap:2px;margin-top:8px;color:var(--grey);font-size:13px}
+.vr-foot{text-align:center;color:var(--muted);font-size:11px;border-top:1px solid var(--line);padding-top:12px;margin-top:4px}

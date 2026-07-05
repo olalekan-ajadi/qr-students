@@ -55,6 +55,21 @@ function buildPayload(s) {
   return encryptPayload({ id: s.student_id, issued: new Date().toISOString().slice(0, 10) });
 }
 
+// Absolute base URL of this deployment, used to bake a scannable link into the
+// QR. Derived from the incoming request (works on Render) unless overridden by
+// the PUBLIC_BASE_URL env var.
+function publicBase(req) {
+  const env = (process.env.PUBLIC_BASE_URL || "").replace(/\/$/, "");
+  if (env) return env;
+  const proto = req.headers["x-forwarded-proto"] || req.protocol || "https";
+  return `${proto}://${req.get("host")}`;
+}
+// The QR encodes this link; scanning it with any phone camera opens the public
+// verification page, which decrypts the token and shows the student's status.
+function verifyUrl(req, encToken) {
+  return `${publicBase(req)}/verify?t=${encodeURIComponent(encToken)}`;
+}
+
 function fmtDate(d) {
   if (!d) return "—";
   return new Date(d).toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" });
@@ -79,8 +94,8 @@ router.get("/:id/card", async (req, res) => {
       return res.status(404).send("Student not found or account not active.");
 
     const s = rows[0];
-    const cardUrl = buildPayload(s);
-    const qrDataUrl = await QRCode.toDataURL(cardUrl, { width: 160, margin: 1, color: { dark: "#1B2A4A" } });
+    const token = buildPayload(s);
+    const qrDataUrl = await QRCode.toDataURL(verifyUrl(req, token), { width: 160, margin: 1, color: { dark: "#1B2A4A" } });
 
     const doc = new PDFDocument({ size: "A5", margins: { top: 0, bottom: 0, left: 0, right: 0 } });
     res.setHeader("Content-Type", "application/pdf");
@@ -209,11 +224,6 @@ router.get("/pending", auth(["admin"]), asyncHandler(async (req, res) => {
   res.json(rows);
 }));
 
-// Clear all scan logs (admin). Student accounts and QR codes are untouched.
-router.delete("/logs/all", auth(["admin"]), asyncHandler(async (req, res) => {
-  const { rowCount } = await pool.query("DELETE FROM scan_logs");
-  res.json({ message: "Scan logs cleared", cleared: rowCount });
-}));
 router.post("/create", auth(["admin"]), async (req, res) => {
   const {
     matric_no, full_name, faculty, department, level, email, password,
@@ -250,59 +260,39 @@ router.post("/create", auth(["admin"]), async (req, res) => {
   }
 });
 
-// Scan logs
-router.get("/logs/all", auth(["admin"]), asyncHandler(async (req, res) => {
-  const { rows } = await pool.query(
-    `SELECT l.log_id, l.result, l.scanned_by, l.scanned_at, s.matric_no, s.full_name
-     FROM scan_logs l LEFT JOIN students s ON s.student_id = l.student_id
-     ORDER BY l.scanned_at DESC LIMIT 100`
-  );
-  res.json(rows);
-}));
-
-// Verify QR — only AES-encrypted (enc:) payloads are accepted.
-router.post("/verify", auth(["admin"]), asyncHandler(async (req, res) => {
-  const { payload } = req.body;
-
-  if (!payload?.startsWith("enc:")) {
-    await logScan(null, req.user.email, "invalid");
-    return res.json({ valid: false, result: "invalid",
-      reason: "Unrecognised QR — not issued by this system" });
-  }
+// PUBLIC verification — opened by scanning a student's QR with any phone
+// camera. The QR links here with the encrypted token in ?t=. No login required;
+// the page shows only enough to confirm identity at a glance.
+router.get("/verify-public", asyncHandler(async (req, res) => {
+  const token = req.query.t;
+  if (typeof token !== "string" || !token.startsWith("enc:"))
+    return res.json({ valid: false, result: "invalid" });
 
   let data;
-  try { data = decryptPayload(payload); }
-  catch {
-    await logScan(null, req.user.email, "invalid");
-    return res.json({ valid: false, result: "invalid",
-      reason: "QR could not be decrypted — may belong to a different system" });
-  }
+  try { data = decryptPayload(token); }
+  catch { return res.json({ valid: false, result: "invalid" }); }
 
   const { rows } = await pool.query(
-    `SELECT student_id, matric_no, full_name, faculty, department, level,
-            sex, state_of_origin, photo, status
+    `SELECT full_name, matric_no, faculty, department, level, photo, status
      FROM students WHERE student_id=$1`, [data.id]
   );
+  if (!rows.length) return res.json({ valid: false, result: "not_found" });
 
-  let student = null, result;
-  if (rows.length) {
-    student = rows[0];
-    result = student.status !== "active" ? "inactive" : "verified";
-  } else { result = "not_found"; }
-
-  const cardUrl = student
-    ? `/api/students/${student.student_id}/card?t=${cardToken(student.student_id)}`
-    : null;
-  await logScan(student?.student_id ?? null, req.user.email, result);
-  res.json({ valid: result === "verified", result, student, cardUrl });
+  const s = rows[0];
+  const active = s.status === "active";
+  res.json({
+    valid: active,
+    result: active ? "verified" : "inactive",
+    student: {
+      full_name: s.full_name,
+      matric_no: s.matric_no,
+      faculty:   s.faculty,
+      department: s.department,
+      level:     s.level,
+      photo:     s.photo,
+    },
+  });
 }));
-
-async function logScan(studentId, scannedBy, result) {
-  await pool.query(
-    "INSERT INTO scan_logs (student_id, scanned_by, result) VALUES ($1,$2,$3)",
-    [studentId, scannedBy, result]
-  );
-}
 
 // ═══════════════════════════════════════════════════════
 //  ADMIN — parameterised routes
@@ -367,7 +357,7 @@ router.get("/:id/qr", auth(["admin"]), asyncHandler(async (req, res) => {
   if (!rows.length) return res.status(404).json({ error: "Student not found" });
   if (!rows[0].qr_valid || !rows[0].qr_payload)
     return res.status(409).json({ error: "QR not available — student must regenerate it" });
-  const dataUrl = await QRCode.toDataURL(rows[0].qr_payload, { width: 320, margin: 2, color: { dark: "#1B2A4A" } });
+  const dataUrl = await QRCode.toDataURL(verifyUrl(req, rows[0].qr_payload), { width: 320, margin: 2, color: { dark: "#1B2A4A" } });
   res.json({ qr: dataUrl, payload: rows[0].qr_payload });
 }));
 
@@ -424,7 +414,7 @@ router.get("/me/profile", auth(["student"]), asyncHandler(async (req, res) => {
   if (!rows.length) return res.status(404).json({ error: "Not found" });
   const s = rows[0];
   s.qr = (s.qr_valid && s.qr_payload)
-    ? await QRCode.toDataURL(s.qr_payload, { width: 320, margin: 2, color: { dark: "#1B2A4A" } })
+    ? await QRCode.toDataURL(verifyUrl(req, s.qr_payload), { width: 320, margin: 2, color: { dark: "#1B2A4A" } })
     : null;
   delete s.qr_payload;
   res.json(s);
@@ -452,7 +442,7 @@ router.post("/me/qr/regenerate", auth(["student"]), asyncHandler(async (req, res
   const payload = buildPayload(rows[0]);
   await pool.query("UPDATE students SET qr_payload=$1, qr_valid=TRUE WHERE student_id=$2",
     [payload, req.user.id]);
-  const qr = await QRCode.toDataURL(payload, { width: 320, margin: 2, color: { dark: "#1B2A4A" } });
+  const qr = await QRCode.toDataURL(verifyUrl(req, payload), { width: 320, margin: 2, color: { dark: "#1B2A4A" } });
   res.json({ qr, message: "QR code regenerated" });
 }));
 

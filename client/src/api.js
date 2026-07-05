@@ -92,9 +92,7 @@ export const api = {
   getStudentDetail: (id) => request(`/students/${id}/detail`),
   editStudent: (id, data) => request(`/students/${id}`, { method: "PUT", body: data }),
   createStudent: (data) => request("/students/create", { method: "POST", body: data }),
-  verify: (payload) => request("/students/verify", { method: "POST", body: { payload } }),
-  logs: () => request("/students/logs/all"),
-  clearLogs: () => request("/students/logs/all", { method: "DELETE" }),
+  verifyPublic: (t) => request(`/students/verify-public?t=${encodeURIComponent(t)}`),
   // student
   myProfile: () => request("/students/me/profile"),
   updateProfile: (d) => request("/students/me/profile", { method: "PUT", body: d }),

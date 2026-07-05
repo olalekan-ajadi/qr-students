@@ -4,6 +4,7 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import "./styles.css";
 import Login from "./pages/Login.jsx";
 import Landing from "./pages/Landing.jsx";
+import VerifyResult from "./pages/VerifyResult.jsx";
 import Register from "./pages/Register.jsx";
 import AdminDashboard from "./pages/AdminDashboard.jsx";
 import StudentPortal from "./pages/StudentPortal.jsx";
@@ -28,6 +29,7 @@ ReactDOM.createRoot(document.getElementById("root")).render(
       <BrowserRouter>
         <Routes>
           <Route path="/" element={<Landing />} />
+          <Route path="/verify" element={<VerifyResult />} />
           <Route path="/admin/login" element={<Login role="admin" />} />
           <Route path="/student/login" element={<Login role="student" />} />
           <Route path="/login" element={<Navigate to="/" replace />} />
