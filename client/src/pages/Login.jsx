@@ -94,7 +94,7 @@ export default function Login({ role = "student" }) {
           <label>Email</label>
           <input value={email} onChange={e => setEmail(e.target.value)}
             onKeyDown={e => e.key === "Enter" && submit()}
-            placeholder="you@university.edu.ng" autoComplete="email" />
+            placeholder="you@gmail.com" autoComplete="email" />
         </div>
         <div className="field">
           <label>Password</label>
